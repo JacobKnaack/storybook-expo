@@ -5,33 +5,47 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+import { default as StorybookRoot } from '../.storybook';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+const {
+  EXPO_PUBLIC_USE_STORYBOOK,
+  NODE_ENV
+} = process.env;
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+let Root = null;
+
+if (EXPO_PUBLIC_USE_STORYBOOK === 'true' && NODE_ENV === 'development') {
+  Root = StorybookRoot
+} else {
+  Root = function RootLayout() {
+    const colorScheme = useColorScheme();
+    const [loaded] = useFonts({
+      SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    });
+
+    useEffect(() => {
+      if (loaded) {
+        SplashScreen.hideAsync();
+      }
+    }, [loaded]);
+
+    if (!loaded) {
+      return null;
     }
-  }, [loaded]);
 
-  if (!loaded) {
-    return null;
+    return (
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </ThemeProvider>
+    );
   }
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
-  );
 }
+
+export default Root;
